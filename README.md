@@ -15,7 +15,8 @@ CREATE TABLE status (
 id INTEGER PRIMARY KEY AUTOINCREMENT,
 address TEXT,
 dns TEXT,
-ping integer);
+ping integer
+timestamp TEXT);
 ```
 
 The following schema is used for the **subnets** table.
