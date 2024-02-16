@@ -15,7 +15,7 @@ CREATE TABLE status (
 id INTEGER PRIMARY KEY AUTOINCREMENT,
 address TEXT,
 dns TEXT,
-ping integer
+ping integer,
 timestamp TEXT);
 ```
 
