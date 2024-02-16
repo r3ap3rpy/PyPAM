@@ -20,7 +20,7 @@ ping integer);
 
 The following schema is used for the **subnets** table.
 
-``` sql
+``` sql
 CREATE TABLE subnets (
 id INTEGER PRIMARY KEY AUTOINCREMENT,
 subnet TEXT,
@@ -30,8 +30,8 @@ status INTEGER);
 
 
 
-
 ## TODO
 - [ ] Add threading to name resolution and ping!
 - [ ] Validate if adding subnets will result in an overlap!
+- [x] Setup threading so all available cores of CPU are used!
 - [x] Subnet validation
