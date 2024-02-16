@@ -50,6 +50,12 @@ timestamp TEXT);
         }
 }
 
+if not os.path.isdir(os.path.sep.join([CWD,'database'])):
+    os.mkdir(os.path.sep.join([CWD,'database']))
+
+if not os.path.isdir(os.path.sep.join([CWD,'logs'])):
+    os.mkdir(os.path.sep.join([CWD,'logs']))
+
 logger.info("#" * 50)
 if args.initdb:
     logger.info("# Initializing database!")
