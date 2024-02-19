@@ -5,11 +5,18 @@ from helper import validateSubnet, validateIpv4
 from ipaddress import ip_network
 from shutil import which
 from socket import gethostbyaddr
+from platform import system
 
 CWD = os.path.sep.join(os.path.abspath(__file__).split(os.path.sep)[:-1])
 DB = os.path.sep.join([CWD,'database','pypam.db'])
 LOGS = os.path.sep.join([CWD,'logs'])
 NUM_THRDS = os.cpu_count()
+
+if not os.path.isdir(os.path.sep.join([CWD,'database'])):
+    os.mkdir(os.path.sep.join([CWD,'database']))
+
+if not os.path.isdir(os.path.sep.join([CWD,'logs'])):
+    os.mkdir(os.path.sep.join([CWD,'logs']))
 
 logging.basicConfig(format='%(asctime)s %(levelname)s :: %(message)s', level=logging.INFO)
 logger = logging.getLogger('PyPAM')
@@ -50,12 +57,6 @@ timestamp TEXT);
         }
 }
 
-if not os.path.isdir(os.path.sep.join([CWD,'database'])):
-    os.mkdir(os.path.sep.join([CWD,'database']))
-
-if not os.path.isdir(os.path.sep.join([CWD,'logs'])):
-    os.mkdir(os.path.sep.join([CWD,'logs']))
-
 logger.info("#" * 50)
 if args.initdb:
     logger.info("# Initializing database!")
@@ -64,6 +65,8 @@ if args.initdb:
             logger.info(f"# Creating datase {database}, if necessary...")
             result = connection.execute(databases[database]['create_table'])
     connection.close()
+    logger.info("# You may now start using the tool!")
+    logger.info("#" * 50)
 elif args.add_subnet:
     logger.info(f"# Validating subnet: {args.add_subnet}")
     try:
@@ -142,16 +145,23 @@ elif args.check_ipv4:
         logger.info("#" * 50)
         sys.exit(-1)
     logger.info("# Address is valid, checking <ping>!")
-    pinger = subprocess.Popen(['ping','-c',"3",args.check_ipv4],stdout=subprocess.PIPE)
+    if system() == 'Windows':
+        pinger = subprocess.Popen(['ping',args.check_ipv4],stdout=subprocess.PIPE)
+    else:
+        pinger = subprocess.Popen(['ping','-c',"3",args.check_ipv4],stdout=subprocess.PIPE)
     pingerOut, pingerErr = pinger.communicate()
     logger.info(f"# Return code was: {pinger.returncode}")
     if pinger.returncode == 0:
         ping_status = True
     logger.info(f"# Checking DNS...")
     try:
-        dns_status = gethostbyaddr(args.check_ipv4)[0]
+        dns_status = gethostbyaddr(args.check_ipv4)
+        logger.info(f"# DNS details: {dns_status}")
+        dns_status = dns_status[0]
     except Exception as e:
-        logger.critical("# Failed to resolve DNS, because: {e}")
+        logger.critical(f"# Failed to resolve DNS, because: {e}")
+        dns_status = None
+
     logger.info(f"# DNS was: {dns_status}")
     logger.info(f"# Address: {args.check_ipv4}, ping: {ping_status}, dns: {dns_status}")
     logger.info("#" * 50)

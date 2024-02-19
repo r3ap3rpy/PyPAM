@@ -34,5 +34,6 @@ status INTEGER);
 ## TODO
 - [ ] Add threading to name resolution and ping!
 - [ ] Validate if adding subnets will result in an overlap!
+- [x] Make sure ping utility follows palatform
 - [x] Setup threading so all available cores of CPU are used!
 - [x] Subnet validation
