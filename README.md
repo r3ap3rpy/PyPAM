@@ -32,8 +32,10 @@ status INTEGER);
 
 
 ## TODO
-- [ ] Add threading to name resolution and ping!
-- [ ] Validate if adding subnets will result in an overlap!
+- [x] Make sure overlapping subnets don't result in double checks.
+- [x] Add cli arguments to manage overrides.
+- [x] Add override possibility for DNS, in case ping works but DNS fails.
+- [x] Add threading to name resolution and ping!
 - [x] Make sure ping utility follows palatform
 - [x] Setup threading so all available cores of CPU are used!
 - [x] Subnet validation
