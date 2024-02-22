@@ -2,23 +2,19 @@ import logging, os, sqlite3, sys, re
 from subprocess import Popen, PIPE
 from logging.handlers import RotatingFileHandler
 from argparse import ArgumentParser, BooleanOptionalAction
-from helper import validateSubnet, validateIpv4, Collector
+from helper import validateSubnet, validateIpv4, Collector, ipv4
 from ipaddress import ip_network
 from shutil import which
 from socket import gethostbyaddr
 from platform import system
 from queue import Queue
-from configparser import ConfigParser
 
-
-ipv4 = re.compile("^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)(\.(?!$)|$)){4}$")
 CWD = os.path.sep.join(os.path.abspath(__file__).split(os.path.sep)[:-1])
 DB = os.path.sep.join([CWD,'database','pypam.db'])
 LOGS = os.path.sep.join([CWD,'logs'])
-OVERRIDE = os.path.sep.join([CWD,'override','override.ini'])
 NUM_THRDS = os.cpu_count()
 TO_OVERRIDE = dict()
-folders = ['database', 'logs', 'override']
+folders = ['database', 'logs']
 
 for folder in folders:
     if not os.path.isdir(os.path.sep.join([CWD,folder])):
@@ -40,10 +36,9 @@ group.add_argument('--disable-subnet', type = str, help = "Disables subnet from 
 group.add_argument('--enable-subnet', type = str, help = "Enables subnet for checking! ")
 group.add_argument('--list-subnets', action = BooleanOptionalAction, help = "Lists the currently used networks!")
 group.add_argument('--check-ipv4', type = str, help = "Checks DNS and Ping for a given Ipv4 address!")
-group.add_argument('--init-override', action = BooleanOptionalAction, help = "Initializes override.ini file!")
 group.add_argument('--list-overrides', action = BooleanOptionalAction, help = "Lists overrides if present!")
 group.add_argument('--add-override', action = BooleanOptionalAction, help = "Adds new override or updates existing one!")
-group.add_argument('--delete-override', type = str, help = "Deletes the given override from override.ini file!")
+group.add_argument('--delete-override', type = str, help = "Deletes the given override!")
 group.add_argument('--run', action= BooleanOptionalAction, help = "Executes the tool!")
 args = parser.parse_args()
 
@@ -64,6 +59,14 @@ address TEXT,
 dns TEXT,
 ping INTEGER,
 timestamp TEXT);
+            """
+        },
+    "overrides" : { 
+            "create_table" : """
+CREATE TABLE IF NOT EXISTS overrides (
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+address TEXT,
+dns TEXT);
             """
         }
 }
@@ -197,106 +200,59 @@ elif args.list_subnets:
     connection.close()
 elif args.list_overrides:
     logger.info("# Preparing for execution.")
-    logger.info("# Checking for overrides file!")
-    if os.path.isfile(OVERRIDE):
-        logger.info(f"# Reading file: {OVERRIDE}")
-        ini_config = ConfigParser()
-        ini_config.read(OVERRIDE)
-        logger.info("# Checking for OVERRIDES section")
-        if 'OVERRIDES' in ini_config.sections():
-            if [ _ for _ in ini_config['OVERRIDES']]:
-                logger.info("# Override entries... ")
-                logger.info("#" * 58)
-                logger.info("#          IP           #           Override             #")
-                logger.info("#" * 58)
-                for entry in ini_config['OVERRIDES']:
-                    TO_OVERRIDE[entry] = ini_config['OVERRIDES'][entry].upper()
-                    logger.info(f"# {entry:^21} # {TO_OVERRIDE[entry]:^30} #")
-                logger.info("#" * 58)
-            else:
-                logger.warning(f"# Section is emtpy, nothing will be overridden!")
+    with sqlite3.connect(DB) as connection:
+        overrides = [ _ for _ in connection.execute("SELECT * FROM overrides")]
+        if overrides:
+            logger.info("#" * 56)
+            logger.info("#          Address       #         DNS                 #")
+            logger.info("#" * 56)
+            for override in overrides:
+                logger.info(f"# {override[1]:^22} # {override[2]:^27} #")
         else:
-            logger.critical("# Cannot find OVERRIDES section...")
-            logger.info("#" * 50)
-            sys.exit(-1)
-    else:
-        logger.critical(f"# Cannot find {OVERRIDE}")
-        logger.info("#" * 50)
-        sys.exit(-1)
+            logger.critical("# Currently there are no overrides defined in the table!")
+    logger.info("#" * 56)
+    connection.close()
 elif args.delete_override:
-    logger.info("# Checking for overrides file!")
-    if os.path.isfile(OVERRIDE):
-        logger.info(f"# Reading file: {OVERRIDE}")
-        ini_config = ConfigParser()
-        ini_config.read(OVERRIDE)
-        logger.info("# Checking for OVERRIDES section")
-        if 'OVERRIDES' in ini_config.sections():
-            if ini_config['OVERRIDES'].get(args.delete_override):
-                logger.info(f"# Deleting {args.delete_override}")
-                del ini_config['OVERRIDES'][args.delete_override]
-                with open(OVERRIDE, 'w') as of:
-                    ini_config.write(of)
-            else:
-                logger.warning("Cannot find specified override...")
-                logger.info("#" * 50)
-                sys.exit(-1)
-        else:
-            logger.critical(f"# Cannot find OVERRIDES section...")
-            logger.info("#" * 50)
-            sys.exit(-1)
-    else:
-        logger.critical(f"# Cannot find {OVERRIDE}")
+    logger.info("# Preparing for execution.")
+    logger.info("# Checking if override is valid...")
+    if not ipv4.match(args.delete_override):
+        logger.critical("# The specified override is invalid!")
         logger.info("#" * 50)
         sys.exit(-1)
-elif args.init_override:
-    logger.info("# Preparing for execution.")
-    logger.info(f"# Checking {OVERRIDE} file, creating if necessary!")
-    if not os.path.isfile(OVERRIDE):
-        logger.info("# Creating file with default section!")
-        with open(OVERRIDE,'w') as of:
-            of.write("[OVERRIDES]\n")
-        logger.info("#" * 50)
-    else:
-        logger.warning("# File already exists!")
-        ini_config = ConfigParser()
-        ini_config.read(OVERRIDE)
-        logger.info("# Checking for OVERRIDES section")
-        if 'OVERRIDES' in ini_config.sections():
-            logger.info("# Section present!")
+    with sqlite3.connect(DB) as connection:
+        logger.info("# Checking for existing record...")
+        exists = [ _ for _ in connection.execute(f"SELECT 1 FROM overrides WHERE address='{args.delete_override}'")]
+        if exists:
+            logger.info("# Deleting record!")
+            connection.execute(f"DELETE FROM overrides WHERE address='{args.delete_override}'")
         else:
-            logger.info("# Creating section!")
-            ini_config.add_section("OVERRIDES")
-            with open(OVERRIDE,'w') as of:
-                ini_config.write(of)
-        logger.info("#" * 50)
+            logger.info("# Override is not present, cannot delete!")
+    logger.info("#" * 50)
+    connection.close()
 elif args.add_override:
-    logger.info("# Preparing for execution.")
-    logger.info("# Checking for overrides file!")
-    if os.path.isfile(OVERRIDE):
-        logger.info(f"# Reading file: {OVERRIDE}")
-        ini_config = ConfigParser()
-        ini_config.read(OVERRIDE)
-        logger.info("# Checking for OVERRIDES section")
-        if 'OVERRIDES' in ini_config.sections():
-            ip_address = input("Please enter the Ipv4 address that you would like to override: ")
-            if not ipv4.match(ip_address):
-                logger.critical(f"The specified address: {ip_address} is invalid!")
-                logger.info("#" * 50)
-                sys.exit(-1)
-            dns_override = input("Please specify the FQDN for this IP: ")
-            if not dns_override:
-                logger.critical(f"The specified address: {ip_address} is invalid!")
-                logger.info("#" * 50)
-                sys.exit(-1)
-            logger.info(f"# Updating configuration file: {ip_address}, dns: {dns_override}")
-            ini_config['OVERRIDES'][ip_address] = dns_override
-            with open(OVERRIDE, 'w') as of:
-                ini_config.write(of)
-            logger.info("#" * 50)
+    logger.info("# Preparing for execution")
+    address = input("Please enter a valid Ipv4 address: ")
+    if not ipv4.match(address):
+        logger.critical("The Ipv4 address you entered is invalid!")
+        logger.info("#" * 50)
+        sys.exit(-1)
+    dns = input("Please enter a valid DNS(FQDN): ")
+    if not dns:
+        logger.critical("# Cannot be empty!")
+        logger.info("#" * 50)
+        sys.exit(-1)
+    logger.info(f"# Inserting or updating {address} with {dns}")
+    with sqlite3.connect(DB) as connection:
+        logger.info("# Checking for existing record...")
+        exists = [ _ for _ in connection.execute(f"SELECT 1 FROM overrides WHERE address='{address}'")]
+        if exists:
+            logger.info("# Updating existing record.")
+            connection.execute(f"UPDATE overrides SET dns='{dns}' WHERE address='{address}'")
         else:
-            logger.critical("# Cannot find OVERRIDES section...")
-            logger.info("#" * 50)
-            sys.exit(-1)
+            logger.info("# Inserting new record.")
+            connection.execute(f"INSERT INTO overrides (address, dns) VALUES('{address}','{dns}')")
+    logger.info("#" * 50)
+    connection.close()
 else:
     logger.info("# Preparing for execution!")
     logger.info(f"# Checking for {OVERRIDE} file...")
