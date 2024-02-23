@@ -257,23 +257,16 @@ elif args.add_override:
     connection.close()
 elif args.run:
     logger.info("# Preparing for execution!")
-    logger.info(f"# Checking for {OVERRIDE} file...")
-    if os.path.isfile(OVERRIDE):
-        logger.info("# Trying to read and parse override file...")
-        ini_config = ConfigParser()
-        ini_config.read(OVERRIDE)
-        if 'OVERRIDES' in ini_config.sections():
-            if [ _ for _ in ini_config['OVERRIDES']]:
-                logger.info("# Override entries: ")
-                for entry in ini_config['OVERRIDES']:
-                    TO_OVERRIDE[entry] = ini_config['OVERRIDES'][entry].upper()
-                    logger.info(f"#\t{entry} -> {TO_OVERRIDE[entry]}")
-            else:
-                logger.warning(f"# Section is emtpy, nothing will be overridden!")
-        else:
-            logger.critical("# Malformed override.ini, missing OVERRIDES section!")
+    logger.info("# Checking for overrides file...")
+    with sqlite3.connect(DB) as connection:
+        overrides = [ _ for _ in connection.execute("SELECT * FROM overrides")]
+
+    if overrides:
+        logger.info("# Found overrides")
+        for override in overrides:
+            TO_OVERRIDE[override[1]] = override[2]
     else:
-        logger.info(f" # No override file was specified: {OVERRIDE}")
+        logger.info("# There are no overrides.")
 
     logger.info("# Checking if <ping> is available!")
     if which('ping') is None:
@@ -365,6 +358,7 @@ elif args.generate_site:
     logger.info("# Initializing Jinja2")
     environment = Environment(loader=FileSystemLoader(os.path.sep.join([CWD,"templates"])))
     template = environment.get_template("index.html")
+    subnet_template = environment.get_template("subnet.html")
     logger.info("# Pulling subnet information!")
     with sqlite3.connect(DB) as connection:
         subnets = [ _ for _ in connection.execute("SELECT * FROM subnets") ]
@@ -382,3 +376,30 @@ elif args.generate_site:
 
     with open('index.html', mode="w", encoding="utf-8") as message:
         message.write(content)
+    logging.info("# Pulling subnet related information from Enabled Subnets!")
+    enabled_subnets = [ _ for _ in subnets if _[2] == 1 ]
+    if not enabled_subnets:
+        logger.critical("# There are no enabled subnets")
+        sys.exit(-1)
+
+    for subnet in enabled_subnets:
+        logger.info(f"# Working on subnet: {subnet[1]}")
+        try:
+            subnet_addresses = [ _ for _ in ip_network(subnet[1], strict=False)][1:-1]
+        except Exception as e:
+            logger.critical(f"# Skipping subnet {subnet[1]}, beacuse: {e}")
+            continue
+
+        addresses_of_subnet = []
+        with sqlite3.connect(DB) as connection:
+            for address in subnet_addresses:
+                exists = [ _ for _ in connection.execute(f"SELECT * FROM status WHERE address='{str(address)}'") ]
+                if exists:
+                    logger.info(exists)
+                    addresses_of_subnet.append(exists[0])
+                else:
+                    logger.warning(f"# Database has no information about this address: {str(address)}")
+        print(addresses_of_subnet)
+        content = subnet_template.render(name = f"{str(subnet[1])}", addresses = addresses_of_subnet)
+        with open(f"{subnet[1].split('/')[0].replace('.','')}.html", mode="w", encoding="utf-8") as message:
+            message.write(content)
