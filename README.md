@@ -32,6 +32,7 @@ status INTEGER);
 
 
 ## TODO
+- [ ] Add Description column to the subnets table.
 - [x] Make sure overlapping subnets don't result in double checks.
 - [x] Add cli arguments to manage overrides.
 - [x] Add override possibility for DNS, in case ping works but DNS fails.

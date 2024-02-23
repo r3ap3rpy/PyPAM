@@ -9,6 +9,7 @@
     padding: 0;
     box-sizing: border-box;
 }
+
 a:link {
   color: green;
   background-color: transparent;
@@ -31,6 +32,8 @@ a:visited {
 }
 
 .content{
+  width: 100%;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -295,7 +298,7 @@ only screen and (max-width: 760px),
                       {% for subnet in subnets %}
                         <tr>
                           <td data-column="{{subnet[1]}}"><a href="{{subnet[1].split('/')[0].replace('.','')}}.html">{{subnet[1]}}</a></td>
-                          {% if subnet[2]%}<td data-column="1" style="color: green">Enabled</td>{% else %}<td data-column="0" style="color: red">Disabled</td>{% endif %}
+                          {% if subnet[2]%}<td data-column="1" style="color: rgb(0, 227, 0)">Enabled</td>{% else %}<td data-column="0" style="color: red">Disabled</td>{% endif %}
                         </tr>
                       {% endfor %}
                     </tbody>
