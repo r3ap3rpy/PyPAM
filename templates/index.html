@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="UTF-8">
+<title>Page Title</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+   *{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.container {
+    width: 100%;
+    min-height: 100vh;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center;
+    background:  linear-gradient(178.6deg, rgb(20, 36, 50) 11.8%, rgb(124, 143, 161) 83.8%);
+}
+
+.content{
+    width: 100%;
+    min-height: 100vh;
+    position: absolute;
+    top:0;
+    left:0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.content h1{
+    font-size: 45px;
+    color: #fff;
+    font-weight: 400;
+    margin-bottom: 20px;
+}
+
+.content p{
+    font-size: 16px;
+    color: #fff;
+}
+
+/* === removing default button style ===*/
+.button {
+  margin: 0;
+  height: auto;
+  background: transparent;
+  padding: 0;
+  border: none;
+}
+
+/* button styling */
+.button {
+  --border-right: 6px;
+  --text-stroke-color: rgba(255,255,255,0.6);
+  --animation-color:rgb(20, 36, 50);
+  --fs-size: 2em;
+  letter-spacing: 3px;
+  text-decoration: none;
+  font-size: var(--fs-size);
+  font-family: "Arial";
+  position: relative;
+  text-transform: uppercase;
+  color: transparent;
+  -webkit-text-stroke: 1px var(--text-stroke-color);
+}
+/* this is the text, when you hover on button */
+.hover-text {
+  position: absolute;
+  box-sizing: border-box;
+  content: attr(data-text);
+  color: var(--animation-color);
+  width: 0%;
+  inset: 0;
+  border-right: var(--border-right) solid var(--animation-color);
+  overflow: hidden;
+  transition: 0.5s;
+  -webkit-text-stroke: 1px var(--animation-color);
+}
+/* hover */
+.button:hover .hover-text {
+  width: 100%;
+  filter: drop-shadow(0 0 23px var(--animation-color))
+}
+
+
+
+/*  */
+
+.square {
+position: relative;
+margin: 0 10px;
+width: 400px; height: 400px;
+display: flex;
+justify-content: center;
+align-items: center;
+}
+
+.square .one {
+position: absolute;
+width: 100%;
+height: 100%;
+border: 2px solid black;
+border-radius: 32% 58% 69% 43% / 48% 32% 59% 55%;
+transition: 0.5s;
+animation: animate 6s linear infinite;
+
+}
+
+.twitch:hover .one {
+border: none;
+background:rgb(20, 36, 50);;
+}
+
+.square .two {
+position: absolute;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+border: 2px solid black;
+border-radius: 38% 62% 63% 37% / 41% 44% 56% 59%;
+transition: 0.5s;
+animation: animate 6s linear infinite;
+}
+
+.twitch:hover .two {
+border: none;
+background: rgb(20, 36, 50);;
+
+}
+
+
+
+
+.square .three {
+position: absolute;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+border: 2px solid black;
+border-radius: 31% 45% 74% 35% / 38% 56% 51% 37%;
+transition: 0.5s;
+animation: animate2 10s linear infinite;
+}
+.twitch:hover .three {
+border: none;
+background:rgb(20, 36, 50);;
+}
+
+.circle {
+position: relative;
+padding: 40px 60px;
+text-align: center;
+transition: 0.5s;
+z-index: 1000;
+}
+
+.square:hover{
+color: white;
+}
+
+.content:hover {
+
+color: #ffffff;
+}
+
+@keyframes animate {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes animate2 {
+    0% {
+        transform: rotate(360deg);
+    }
+    100% {
+        transform: rotate(0deg);
+    }
+
+}
+
+.DrugRadar{
+    font-size: 50px;
+}
+table { 
+	width: 750px; 
+	border-collapse: collapse; 
+	margin:50px auto;
+	}
+
+/* Zebra striping */
+tr:nth-of-type(odd) { 
+	background: #3c4449; 
+	}
+
+th { 
+	background: #3498db; 
+	color: white; 
+	font-weight: bold; 
+	}
+
+td, th { 
+	padding: 10px; 
+	border: 1px solid #ccc; 
+	text-align: left; 
+	font-size: 18px;
+	}
+
+/* 
+Max width before this PARTICULAR table gets nasty
+This query will take effect for any screen smaller than 760px
+and also iPads specifically.
+*/
+@media 
+only screen and (max-width: 760px),
+(min-device-width: 768px) and (max-device-width: 1024px)  {
+
+	table { 
+	  	width: 100%; 
+	}
+
+	/* Force table to not be like tables anymore */
+	table, thead, tbody, th, td, tr { 
+		display: block; 
+	}
+	
+	/* Hide table headers (but not display: none;, for accessibility) */
+	thead tr { 
+		position: absolute;
+		top: -9999px;
+		left: -9999px;
+	}
+	
+	tr { border: 1px solid #ccc; }
+	
+	td { 
+		/* Behave  like a "row" */
+		border: none;
+		border-bottom: 1px solid #eee; 
+		position: relative;
+		padding-left: 50%; 
+	}
+
+	td:before { 
+		/* Now like a table header */
+		position: absolute;
+		/* Top/left values mimic padding */
+		top: 6px;
+		left: 6px;
+		width: 45%; 
+		padding-right: 10px; 
+		white-space: nowrap;
+		/* Label the data */
+		content: attr(data-column);
+
+		color: #000;
+		font-weight: bold;
+	}
+
+}
+
+</style>
+<script src=""></script>
+<body>
+
+        <div class="container">
+            <div class="content">
+                <a href="/index.html" class="button" target="_parent">
+                        <span class="actual-text">&nbsp;{{ name }}&nbsp;</span>
+                        <span class="hover-text" aria-hidden="true">&nbsp;{{ name }}&nbsp;</span>
+                </a>
+                <table>
+                    <thead>
+                      <tr>
+                        <th>Subnet</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for subnet in subnets %}
+                        <tr>
+                          <td data-column="{{subnet[1]}}">{{subnet[1]}}</td>
+                          {% if subnet[2]%}<td data-column="1" style="color: green">Enabled</td>{% else %}<td data-column="0" style="color: red">Disabled</td>{% endif %}
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                  {% if oname is defined %}
+                  <a href="/index.html" class="button" target="_parent">
+                    <span class="actual-text">&nbsp;{{ oname }}&nbsp;</span>
+                    <span class="hover-text" aria-hidden="true">&nbsp;{{ oname }}&nbsp;</span>
+            </a>
+            <table>
+                <thead>
+                  <tr>
+                    <th>Address</th>
+                    <th>DNS</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for subnet in overrides %}
+                    <tr>
+                      <td data-column="{{subnet[1]}}">{{subnet[1]}}</td>
+                      <td data-column="{{subnet[2]}}">{{subnet[2]}}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+                  {% endif %}
+            </div>
+        </div>
+    
+</body>
+</html> 

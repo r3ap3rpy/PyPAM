@@ -8,6 +8,7 @@ from shutil import which
 from socket import gethostbyaddr
 from platform import system
 from queue import Queue
+from jinja2 import Environment, FileSystemLoader
 
 CWD = os.path.sep.join(os.path.abspath(__file__).split(os.path.sep)[:-1])
 DB = os.path.sep.join([CWD,'database','pypam.db'])
@@ -40,6 +41,7 @@ group.add_argument('--list-overrides', action = BooleanOptionalAction, help = "L
 group.add_argument('--add-override', action = BooleanOptionalAction, help = "Adds new override or updates existing one!")
 group.add_argument('--delete-override', type = str, help = "Deletes the given override!")
 group.add_argument('--run', action= BooleanOptionalAction, help = "Executes the tool!")
+group.add_argument('--generate-site', action = BooleanOptionalAction, help = "Generates static site from template!")
 args = parser.parse_args()
 
 databases = {
@@ -253,7 +255,7 @@ elif args.add_override:
             connection.execute(f"INSERT INTO overrides (address, dns) VALUES('{address}','{dns}')")
     logger.info("#" * 50)
     connection.close()
-else:
+elif args.run:
     logger.info("# Preparing for execution!")
     logger.info(f"# Checking for {OVERRIDE} file...")
     if os.path.isfile(OVERRIDE):
@@ -350,4 +352,33 @@ else:
                 logger.info("# Inserting new record...")
                 connection.execute(f"INSERT INTO STATUS (address, dns, ping, timestamp) VALUES ('{result[0]}','{result[2]}',{result[1]},'{result[3]}')")
         connection.close()
+elif args.generate_site:
+    logger.info("# Preparing for execution!")
+    logger.info("# Looking for templates directory and index.html file.")
+    if not os.path.isdir(os.path.sep.join([CWD,"templates"])):
+        logger.critical("# Cannot find templates directory!")
+        sys.exit(-1)
+    if not os.path.isfile(os.path.sep.join([CWD,'templates','index.html'])):
+        logger.critical("# Cannot find index.html file!")
+        sys.exit(-1)
+    logger.info("# Found both!")
+    logger.info("# Initializing Jinja2")
+    environment = Environment(loader=FileSystemLoader(os.path.sep.join([CWD,"templates"])))
+    template = environment.get_template("index.html")
+    logger.info("# Pulling subnet information!")
+    with sqlite3.connect(DB) as connection:
+        subnets = [ _ for _ in connection.execute("SELECT * FROM subnets") ]
+        overrides = [ _ for _ in connection.execute("SELECT * FROM overrides") ]
 
+    if not subnets:
+        logger.critical("# Cannot find any subnets")
+        sys.exit(-1)
+    if overrides:
+        logger.info("# Generating with overrides.")
+        content = template.render(name="Subnets",subnets=subnets, oname = "Overrides", overrides = overrides)
+    else:
+        logger.info("# Generating without overrides.")
+        content = template.render(name="Subnets",subnets=subnets)
+
+    with open('index.html', mode="w", encoding="utf-8") as message:
+        message.write(content)
