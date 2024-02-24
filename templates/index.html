@@ -11,13 +11,13 @@
 }
 
 a:link {
-  color: green;
+  color: rgb(0, 227, 0);
   background-color: transparent;
   text-decoration: none;
 }
 
 a:visited {
-  color: red;
+  color: rgb(0, 227, 0);
   background-color: transparent;
   text-decoration: none;
 }
@@ -291,14 +291,17 @@ only screen and (max-width: 760px),
                     <thead>
                       <tr>
                         <th>Subnet</th>
+			<th>Descrption</th>
                         <th>Status</th>
                       </tr>
                     </thead>
                     <tbody>
                       {% for subnet in subnets %}
-                        <tr>
+                        <tr align="center">
                           <td data-column="{{subnet[1]}}"><a href="{{subnet[1].split('/')[0].replace('.','')}}.html">{{subnet[1]}}</a></td>
-                          {% if subnet[2]%}<td data-column="1" style="color: rgb(0, 227, 0)">Enabled</td>{% else %}<td data-column="0" style="color: red">Disabled</td>{% endif %}
+			<td data-column="{{subnet[2]}}">{{subnet[2]}}</td>
+
+                          {% if subnet[3]%}<td data-column="1" style="color: rgb(0, 227, 0)">Enabled</td>{% else %}<td data-column="0" style="color: red">Disabled</td>{% endif %}
                         </tr>
                       {% endfor %}
                     </tbody>

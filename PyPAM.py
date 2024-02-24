@@ -15,7 +15,7 @@ DB = os.path.sep.join([CWD,'database','pypam.db'])
 LOGS = os.path.sep.join([CWD,'logs'])
 NUM_THRDS = os.cpu_count()
 TO_OVERRIDE = dict()
-folders = ['database', 'logs']
+folders = ['database', 'logs','output']
 
 for folder in folders:
     if not os.path.isdir(os.path.sep.join([CWD,folder])):
@@ -50,6 +50,7 @@ databases = {
 CREATE TABLE IF NOT EXISTS subnets (
 id INTEGER PRIMARY KEY AUTOINCREMENT,
 subnet TEXT,
+description TEXT,
 status INTEGER);
             """
         },
@@ -92,12 +93,15 @@ elif args.add_subnet:
         logger.critical(f"# The subnet is invalid because :: {e.__class__.__name__} :: {e}")
         logger.info("#" * 50)
         sys.exit(-1)
-    logger.info(f"# Adding subnet {args.add_subnet} to the database, if not already there!")
+    subnet_description = input("Please specify the description(N.A.): ")
+    if not subnet_description:
+        subnet_description = "N.A."
+    logger.info(f"# Adding subnet {args.add_subnet} to the database with description: {subnet_description}, if not already there!")
     with sqlite3.connect(DB) as connection:
         exists = [ _ for _ in connection.execute(f"SELECT 1 FROM subnets WHERE subnet='{args.add_subnet}'")]
         if not exists: 
             logger.info("# No existsing record, adding...")
-            result = connection.execute(f"INSERT INTO subnets (subnet, status) VALUES ('{args.add_subnet}',1)")
+            result = connection.execute(f"INSERT INTO subnets (subnet, description, status) VALUES ('{args.add_subnet}','{subnet_description}',1)")
         else:
             logger.info(f"# Subnet: {args.add_subnet} is already present, nothing to add!")
     logger.info("#" * 50)
@@ -190,15 +194,15 @@ elif args.list_subnets:
     with sqlite3.connect(DB) as connection:
         subnets = [_ for _ in connection.execute("SELECT * FROM subnets")]
         if subnets:
-            logger.info("#" * 50)
-            logger.info("#          Subnet           #       Status       #")
-            logger.info("#" * 50)
+            logger.info("#" * 78)
+            logger.info("#          Subnet           #        Description        #       Status       #")
+            logger.info("#" * 78)
             for subnet in subnets:
-                logger.info(f"# {subnet[1]:^25} # {('Enabled' if subnet[2] else 'Disabled'):^18} #")
+                logger.info(f"# {subnet[1]:^25} # {subnet[2]:^25} # {('Enabled' if subnet[3] else 'Disabled'):^18} #")
 
         else:
             logger.critical("# Currently no subnets are recorded in the database!")
-    logger.info("#" * 50)
+    logger.info("#" * 78)
     connection.close()
 elif args.list_overrides:
     logger.info("# Preparing for execution.")
@@ -280,13 +284,13 @@ elif args.run:
             logger.critical("# There are no subnets present, aborting!")
             logger.info("#" * 50)
             sys.exit(-1)
-    enabled_subnets = [ _ for _ in subnets if _[2] == 1]
+    enabled_subnets = [ _ for _ in subnets if _[3] == 1]
     if not enabled_subnets:
         logger.critical("# There are no enabled subnets, exiting!")
         sys.exit(-1)
     logger.info("# This is the list of enabled subnets:")
     for subnet in enabled_subnets:
-        logger.info(f"\t{subnet[1]}")
+        logger.info(f"\t{subnet[1]} :: {subnet[2]}")
     logger.info(f"# Processing subnets!")
     ip_addresses = []
     for subnet in enabled_subnets:
@@ -374,10 +378,10 @@ elif args.generate_site:
         logger.info("# Generating without overrides.")
         content = template.render(name="Subnets",subnets=subnets)
 
-    with open('index.html', mode="w", encoding="utf-8") as message:
+    with open(os.path.sep.join([CWD,'output','index.html']), mode="w", encoding="utf-8") as message:
         message.write(content)
     logging.info("# Pulling subnet related information from Enabled Subnets!")
-    enabled_subnets = [ _ for _ in subnets if _[2] == 1 ]
+    enabled_subnets = [ _ for _ in subnets if _[3] == 1 ]
     if not enabled_subnets:
         logger.critical("# There are no enabled subnets")
         sys.exit(-1)
@@ -399,7 +403,6 @@ elif args.generate_site:
                     addresses_of_subnet.append(exists[0])
                 else:
                     logger.warning(f"# Database has no information about this address: {str(address)}")
-        print(addresses_of_subnet)
         content = subnet_template.render(name = f"{str(subnet[1])}", addresses = addresses_of_subnet)
-        with open(f"{subnet[1].split('/')[0].replace('.','')}.html", mode="w", encoding="utf-8") as message:
+        with open(os.path.sep.join([CWD,'output',f"{subnet[1].split('/')[0].replace('.','')}.html"]), mode="w", encoding="utf-8") as message:
             message.write(content)
