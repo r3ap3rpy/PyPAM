@@ -1,6 +1,6 @@
 logs/
+__pycache__/
 helper/__pycache__/
 database/
 override/
 output/
-*.html
