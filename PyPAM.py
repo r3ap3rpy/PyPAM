@@ -1,4 +1,4 @@
-import logging, os, sqlite3, sys, re
+import logging, os, sqlite3
 from subprocess import Popen, PIPE
 from logging.handlers import RotatingFileHandler
 from argparse import ArgumentParser, BooleanOptionalAction
@@ -9,6 +9,7 @@ from socket import gethostbyaddr
 from platform import system
 from queue import Queue
 from jinja2 import Environment, FileSystemLoader
+from sys import exit
 
 CWD = os.path.sep.join(os.path.abspath(__file__).split(os.path.sep)[:-1])
 DB = os.path.sep.join([CWD,'database','pypam.db'])
@@ -92,7 +93,7 @@ elif args.add_subnet:
     except Exception as e:
         logger.critical(f"# The subnet is invalid because :: {e.__class__.__name__} :: {e}")
         logger.info("#" * 50)
-        sys.exit(-1)
+        exit(-1)
     subnet_description = input("Please specify the description(N.A.): ")
     if not subnet_description:
         subnet_description = "N.A."
@@ -113,7 +114,7 @@ elif args.remove_subnet:
     except Exception as e:
         logger.critical(f"# The subnet is invalid because :: {e.__class__.__name__} :: {e}")
         logger.info("#" * 50)
-        sys.exit(-1)
+        exit(-1)
     logger.info(f"# Deleting subnet: {args.remove_subnet} if present!")
     with sqlite3.connect(DB) as connection:
         exists = [ _ for _ in connection.execute(f"SELECT 1 FROM subnets WHERE subnet='{args.remove_subnet}'")]
@@ -131,7 +132,7 @@ elif args.disable_subnet:
     except Exception as e:
         logger.critical(f"# The subnet is invalid because :: {e.__class__.__name__} :: {e}")
         logger.info("#" * 50)
-        sys.exit(-1)
+        exit(-1)
     logger.info(f"# Disabling subnet: {args.disable_subnet} if present!")
     with sqlite3.connect(DB) as connection:
         exists = [ _ for _ in connection.execute(f"SELECT 1 FROM subnets WHERE subnet='{args.disable_subnet}'")]
@@ -149,7 +150,7 @@ elif args.enable_subnet:
     except Exception as e:
         logger.critical(f"# The subnet is invalid because :: {e.__class__.__name__} :: {e}")
         logger.info("#" * 50)
-        sys.exit(-1)
+        exit(-1)
     logger.info(f"# Enabling subnet: {args.enable_subnet} if present!")
     with sqlite3.connect(DB) as connection:
         exists = [ _ for _ in connection.execute(f"SELECT 1 FROM subnets WHERE subnet='{args.enable_subnet}'")]
@@ -167,7 +168,7 @@ elif args.check_ipv4:
     if not validateIpv4(args.check_ipv4):
         logger.critical("# This {args.check_ipv4} is not a valid IPV4 address!")
         logger.info("#" * 50)
-        sys.exit(-1)
+        exit(-1)
     logger.info("# Address is valid, checking <ping>!")
     if system() == 'Windows':
         pinger = Popen(['ping',args.check_ipv4],stdout=PIPE)
@@ -224,7 +225,7 @@ elif args.delete_override:
     if not ipv4.match(args.delete_override):
         logger.critical("# The specified override is invalid!")
         logger.info("#" * 50)
-        sys.exit(-1)
+        exit(-1)
     with sqlite3.connect(DB) as connection:
         logger.info("# Checking for existing record...")
         exists = [ _ for _ in connection.execute(f"SELECT 1 FROM overrides WHERE address='{args.delete_override}'")]
@@ -241,12 +242,12 @@ elif args.add_override:
     if not ipv4.match(address):
         logger.critical("The Ipv4 address you entered is invalid!")
         logger.info("#" * 50)
-        sys.exit(-1)
+        exit(-1)
     dns = input("Please enter a valid DNS(FQDN): ")
     if not dns:
         logger.critical("# Cannot be empty!")
         logger.info("#" * 50)
-        sys.exit(-1)
+        exit(-1)
     logger.info(f"# Inserting or updating {address} with {dns}")
     with sqlite3.connect(DB) as connection:
         logger.info("# Checking for existing record...")
@@ -276,18 +277,19 @@ elif args.run:
     if which('ping') is None:
         logger.critical("# <ping> command is not available, aborting!")
         logger.info("#" * 50)
-        sys.exit(-1)
+        exit(-1)
     logger.info("# <ping> is available, checking for subnets!")
     with sqlite3.connect(DB) as connection:
         subnets = [ _ for _ in connection.execute("SELECT * FROM subnets")]
         if not subnets:
             logger.critical("# There are no subnets present, aborting!")
             logger.info("#" * 50)
-            sys.exit(-1)
+            exit(-1)
     enabled_subnets = [ _ for _ in subnets if _[3] == 1]
     if not enabled_subnets:
         logger.critical("# There are no enabled subnets, exiting!")
-        sys.exit(-1)
+        logger.info("#" * 50)
+        exit(-1)
     logger.info("# This is the list of enabled subnets:")
     for subnet in enabled_subnets:
         logger.info(f"\t{subnet[1]} :: {subnet[2]}")
@@ -305,7 +307,7 @@ elif args.run:
     if not ip_addresses:
         logger.critical(f"# Could not build up ip list to process.")
         logger.info("#" * 50)
-        sys.exit(-1)
+        exit(-1)
 
     logger.info(f"# Bulding up jobqueue!")
     jobqueue = Queue()
@@ -354,10 +356,10 @@ elif args.generate_site:
     logger.info("# Looking for templates directory and index.html file.")
     if not os.path.isdir(os.path.sep.join([CWD,"templates"])):
         logger.critical("# Cannot find templates directory!")
-        sys.exit(-1)
+        exit(-1)
     if not os.path.isfile(os.path.sep.join([CWD,'templates','index.html'])):
         logger.critical("# Cannot find index.html file!")
-        sys.exit(-1)
+        exit(-1)
     logger.info("# Found both!")
     logger.info("# Initializing Jinja2")
     environment = Environment(loader=FileSystemLoader(os.path.sep.join([CWD,"templates"])))
@@ -370,7 +372,8 @@ elif args.generate_site:
 
     if not subnets:
         logger.critical("# Cannot find any subnets")
-        sys.exit(-1)
+        logger.info("#" * 50)
+        exit(-1)
 
     if overrides:
         logger.info("# Generating with overrides.")
@@ -385,7 +388,8 @@ elif args.generate_site:
     enabled_subnets = [ _ for _ in subnets if _[3] == 1 ]
     if not enabled_subnets:
         logger.critical("# There are no enabled subnets")
-        sys.exit(-1)
+        logger.info("#" * 50)
+        exit(-1)
 
     for subnet in enabled_subnets:
         logger.info(f"# Working on subnet: {subnet[1]}")

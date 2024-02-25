@@ -4,6 +4,7 @@ from subprocess import Popen, PIPE
 from socket import gethostbyaddr
 from datetime import datetime
 import re
+
 ipv4 = re.compile("^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)(\.(?!$)|$)){4}$")
 
 class SubnetValidationError(Exception):
@@ -37,7 +38,6 @@ def validateSubnet(subnet):
 def validateIpv4(ip):
     return ipv4.match(ip)
         
-
 class Collector(Thread):
     def __init__(self, jobqueue, resultqueue, logger):
         Thread.__init__(self)
