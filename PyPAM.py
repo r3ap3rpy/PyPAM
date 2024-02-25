@@ -371,6 +371,7 @@ elif args.generate_site:
     if not subnets:
         logger.critical("# Cannot find any subnets")
         sys.exit(-1)
+
     if overrides:
         logger.info("# Generating with overrides.")
         content = template.render(name="Subnets",subnets=subnets, oname = "Overrides", overrides = overrides)
@@ -406,3 +407,5 @@ elif args.generate_site:
         content = subnet_template.render(name = f"{str(subnet[1])}", addresses = addresses_of_subnet)
         with open(os.path.sep.join([CWD,'output',f"{subnet[1].split('/')[0].replace('.','')}.html"]), mode="w", encoding="utf-8") as message:
             message.write(content)
+    logger.info("# Process complete, check outputs folder for static files.")
+    logger.info("#" * 50)
