@@ -2,6 +2,14 @@
 
 This is a small IPAM tool I have developed in my free time.
 
+Here is how the landing page looks like.
+
+![landing](/images/index.png)
+
+This is a sample from the subnet related informations.
+
+![subnets](/images/subnet.png)
+
 It relies on the **ping** utility as external resource and the **jinja2** module, the rest is pure python. I have used **Python 3.11** during development, but it should be good backwards with a couple of versions.
 
 In order to use it you simply have to clone it.
@@ -56,7 +64,8 @@ Then you will have to perform the following actions:
 During execution the tool used threading to speed up the process. The default is the number of cores made visible by the **os.cpu_count()** function call. 
 
 ## TODO
-- [ ] Add simple filter for the subnet tables!
+- [ ] Add link to show all the unused IP-s where neither ping nor dns resolution is working!
+- [x] Add simple filter for the subnet tables!
 - [x] Add Description column to the subnets table.
 - [x] Make sure overlapping subnets don't result in double checks.
 - [x] Add cli arguments to manage overrides.
