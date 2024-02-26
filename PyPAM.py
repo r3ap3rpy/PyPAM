@@ -374,23 +374,14 @@ elif args.generate_site:
         logger.critical("# Cannot find any subnets")
         logger.info("#" * 50)
         exit(-1)
-
-    if overrides:
-        logger.info("# Generating with overrides.")
-        content = template.render(name="Subnets",subnets=subnets, oname = "Overrides", overrides = overrides)
-    else:
-        logger.info("# Generating without overrides.")
-        content = template.render(name="Subnets",subnets=subnets)
-
-    with open(os.path.sep.join([CWD,'output','index.html']), mode="w", encoding="utf-8") as message:
-        message.write(content)
+    
     logging.info("# Pulling subnet related information from Enabled Subnets!")
     enabled_subnets = [ _ for _ in subnets if _[3] == 1 ]
     if not enabled_subnets:
         logger.critical("# There are no enabled subnets")
         logger.info("#" * 50)
         exit(-1)
-
+    
     for subnet in enabled_subnets:
         logger.info(f"# Working on subnet: {subnet[1]}")
         try:
@@ -411,5 +402,27 @@ elif args.generate_site:
         content = subnet_template.render(name = f"{str(subnet[1])}", addresses = addresses_of_subnet)
         with open(os.path.sep.join([CWD,'output',f"{subnet[1].split('/')[0].replace('.','')}.html"]), mode="w", encoding="utf-8") as message:
             message.write(content)
+
+    logger.info("# Checking for IP-s which are pingable but cannot resolve DNS.")
+    with sqlite3.connect(DB) as connection:
+        pingable_without_dns = [ _ for _ in connection.execute("SELECT * FROM status WHERE ping=1 AND dns = 'N.A.'")]
+    connection.close()
+
+    if pingable_without_dns:
+        logger.info("# Rendering html!")
+        content = subnet_template.render(name = f"pwodns.html", addresses = pingable_without_dns)
+        with open(os.path.sep.join([CWD,'output',f"pwodns.html"]), mode="w", encoding="utf-8") as message:
+            message.write(content)
+    else:
+        logger.info("# Skipping as all devices are reachable and with DNS.")
+    if overrides:
+        logger.info("# Generating with overrides.")
+        content = template.render(name="Subnets",subnets=subnets, oname = "Overrides", overrides = overrides, pwodns = pingable_without_dns)
+    else:
+        logger.info("# Generating without overrides.")
+        content = template.render(name="Subnets",subnets=subnets, pwodns = pingable_without_dns)
+
+    with open(os.path.sep.join([CWD,'output','index.html']), mode="w", encoding="utf-8") as message:
+        message.write(content)
     logger.info("# Process complete, check outputs folder for static files.")
     logger.info("#" * 50)

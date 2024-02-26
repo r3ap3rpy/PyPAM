@@ -64,7 +64,7 @@ Then you will have to perform the following actions:
 During execution the tool used threading to speed up the process. The default is the number of cores made visible by the **os.cpu_count()** function call. 
 
 ## TODO
-- [ ] Add link to show all the unused IP-s where neither ping nor dns resolution is working!
+- [x] Add link to show pingable IP-s without DNS.
 - [x] Add simple filter for the subnet tables!
 - [x] Add Description column to the subnets table.
 - [x] Make sure overlapping subnets don't result in double checks.

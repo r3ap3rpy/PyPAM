@@ -328,6 +328,12 @@ only screen and (max-width: 760px),
                 </tbody>
               </table>
                   {% endif %}
+                  {% if pwodns|length > 1 %}
+                  <a href="pwodns.html" class="button" target="_parent">
+                    <span class="actual-text">&nbsp;NoDNS&nbsp;</span>
+                    <span class="hover-text" aria-hidden="true">&nbsp;NoDNS&nbsp;</span>
+            </a>
+                  {% endif %}
             </div>
         </div>
     
