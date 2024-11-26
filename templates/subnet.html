@@ -340,8 +340,14 @@ only screen and (max-width: 760px),
                     <tbody>
                       {% for address in addresses %}
                         <tr>
-                          <td data-column="{{address[1]}}">{{address[1]}}</td>
-                          <td data-column="{{address[1]}}">{{address[2]}}</td>
+			  <td data-column="{{address[1]}}">{{address[1]}}</td>
+                          {% if (address[2] == 'N.A.' and address[3] == 0) %}
+                            <td data-column="{{address[1]}}" style="color:#00ff00">{{address[2]}}</td> 
+                          {% elif (address[2] != "N.A." and address[3] == 0) or ( address[2] == "N.A." and address[3] != 0) %}
+                            <td data-column="{{address[1]}}" style="color:#FFFF00">{{address[2]}}</td>  
+                          {% else %}
+                            <td data-column="{{address[1]}}" style="color:#FF0000">{{address[2]}}</td>  
+                          {% endif %}
                           <td data-column="{{address[1]}}">{{address[3]}}</td>
                           <td data-column="{{address[1]}}">{{address[4]}}</td>
                         </tr>
